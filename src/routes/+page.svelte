@@ -12,7 +12,7 @@
   import 'ag-grid-community/styles/ag-theme-quartz.css';
 
   export let queryResult: arrow.Table<any>;
-  export let queryInput = 'select * from my_table.parquet;';
+  export let queryInput = '';
   export let files: FileList;
 
   let db: Promise<duckdb.AsyncDuckDB>;
@@ -62,16 +62,19 @@
     agGridApi = agGridApi;
   }
 
-  async function registerFile(file: File) {
-    console.log(file);
-    await (
-      await db
-    ).registerFileHandle(
-      'my_table.parquet',
-      file,
-      DuckDBDataProtocol.BROWSER_FILEREADER,
-      true
-    );
+  async function registerFiles(files: FileList) {
+    for (let file of files) {
+      console.log(file);
+      await (
+        await db
+      ).registerFileHandle(
+        file.name,
+        file,
+        DuckDBDataProtocol.BROWSER_FILEREADER,
+        true
+      );
+      queryInput = `select * from ${file.name};`;
+    }
   }
 
   onMount(() => {
@@ -88,21 +91,18 @@
     <img src="inspector_duck.png" alt="DuckDB Logo" height="200px" />
     <h1>Inspector Duck</h1>
   </figure>
-  <input type="file" id="file" bind:files />
+  <input type="file" id="file" bind:files multiple on:change={() => {registerFiles(files)}} />
   {#if files && files[0]}
     <textarea
       class="input"
       bind:value={queryInput}
       rows="10"
-      placeholder="select * from my_table.parquet;"
+      placeholder="select * from {files[0].name};"
     />
     <br />
     <button
       on:click={() => {
-        registerFile(files[0]).then(() => {
-          console.log('file registered');
-          query(queryInput);
-        });
+        query(queryInput);
       }}>Query</button
     >
   {/if}
