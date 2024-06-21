@@ -45,18 +45,19 @@
     console.log(result);
     queryResult = result;
 
-    const columns = queryResult.schema.fields.map((field) => field.name);
+    const columns = queryResult.schema.fields.map((field: any) => field.name);
     const queryData = queryResult.toArray();
 
     let colDefs: any[] = [];
-    columns.forEach((key) =>
+    columns.forEach((key: any) =>
       colDefs.push({
         field: key,
-        filter: true,
+        filter: true
       })
     );
     agGridApi.setGridOption('columnDefs', colDefs);
     agGridApi.setGridOption('rowData', queryData);
+    agGridApi.autoSizeAllColumns();
   }
 
   async function registerFile(file: File) {
