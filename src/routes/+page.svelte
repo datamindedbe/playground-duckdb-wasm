@@ -5,6 +5,7 @@
   import duckdb_wasm_eh from '@duckdb/duckdb-wasm/dist/duckdb-eh.wasm?url';
   import eh_worker from '@duckdb/duckdb-wasm/dist/duckdb-browser-eh.worker.js?url';
 
+  let queryResult = '';
   async function initDuckDb(): Promise<duckdb.AsyncDuckDB> {
     const MANUAL_BUNDLES: duckdb.DuckDBBundles = {
       mvp: {
@@ -28,12 +29,35 @@
 
   async function query(queryString: string) {
     const db = await initDuckDb();
-    // const result = await db.;
-    // console.log(result);
+    const c = await db.connect();
+
+    const query = 'SELECT count(*) FROM buffer.parquet;';
+    const res = await fetch(
+      'https://shell.duckdb.org/data/tpch/0_01/parquet/lineitem.parquet'
+    );
+    await db.registerFileBuffer(
+      'buffer.parquet',
+      new Uint8Array(await res.arrayBuffer())
+    );
+
+    const result = await c.query(query);
+    console.log(result);
+    queryResult = result;
+    // return resu;
   }
 </script>
 
-<h1>Welcome to SvelteKit</h1>
-<p>
-  Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation
-</p>
+
+<button on:click={() => query('SELECT count(*) FROM buffer.parquet;')}
+  >Click me</button
+>
+<div class="queryResult">{queryResult}</div>
+
+<style>
+  .queryResult {
+    margin-top: 20px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+</style>
