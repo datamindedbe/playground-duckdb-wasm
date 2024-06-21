@@ -82,6 +82,10 @@
 </script>
 
 <div class="container">
+  <figure>
+    <img src="inspector_duck.png" alt="DuckDB Logo" height="200px" />
+    <h1> Inspector Duck </h1>
+  </figure>
   <input type="file" id="file" bind:files />
   {#if files && files[0]}
     <input type="text" class="input" bind:value={queryInput} />
@@ -95,7 +99,7 @@
       }}>Query</button
     >
   {/if}
-  <div id="queryResultGrid" class="queryResult ag-theme-quartz"></div>
+  <div id="queryResultGrid" class="queryResult ag-theme-quartz-auto-dark"></div>
 </div>
 
 <style>
