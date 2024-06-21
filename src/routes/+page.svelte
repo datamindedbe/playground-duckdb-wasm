@@ -57,7 +57,10 @@
 
     let colDefs : any[] = [];
     const keys = Object.keys(queryData[0]);
-    keys.forEach(key => colDefs.push({field : key}));
+    keys.forEach(key => colDefs.push({
+      field : key,
+      filter: true
+    }));
     agGridApi.setGridOption('columnDefs', colDefs);
     agGridApi.setGridOption('rowData', queryData);
   }
