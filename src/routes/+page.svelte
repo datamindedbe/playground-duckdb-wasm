@@ -4,9 +4,15 @@
   import mvp_worker from '@duckdb/duckdb-wasm/dist/duckdb-browser-mvp.worker.js?url';
   import duckdb_wasm_eh from '@duckdb/duckdb-wasm/dist/duckdb-eh.wasm?url';
   import eh_worker from '@duckdb/duckdb-wasm/dist/duckdb-browser-eh.worker.js?url';
+  import { DuckDBDataProtocol } from '@duckdb/duckdb-wasm';
+  import { onMount } from 'svelte';
 
   export let queryResult = '';
   export let queryInput = '';
+  export let files: FileList;
+
+  let db: Promise<duckdb.AsyncDuckDB>;
+
   async function initDuckDb(): Promise<duckdb.AsyncDuckDB> {
     const MANUAL_BUNDLES: duckdb.DuckDBBundles = {
       mvp: {
@@ -29,28 +35,50 @@
   }
 
   async function query(queryString: string) {
-    const db = await initDuckDb();
-    const c = await db.connect();
+    const c = await (await db).connect();
 
-    const res = await fetch(
-      'https://shell.duckdb.org/data/tpch/0_01/parquet/lineitem.parquet'
-    );
-    await db.registerFileBuffer(
-      'buffer.parquet',
-      new Uint8Array(await res.arrayBuffer())
-    );
+    // const res = await fetch(
+    //   'https://shell.duckdb.org/data/tpch/0_01/parquet/lineitem.parquet'
+    // );
+    // await db.registerFileBuffer(
+    //   'buffer.parquet',
+    //   new Uint8Array(await res.arrayBuffer())
+    // );
 
     const result = await c.query(queryString);
     console.log(result);
     queryResult = result;
-    // return resu;
   }
+
+  async function registerFile(file: File) {
+    console.log(file);
+    await (
+      await db
+    ).registerFileHandle(
+      'buffer.parquet',
+      file,
+      DuckDBDataProtocol.BROWSER_FILEREADER,
+      true
+    );
+
+  }
+
+  onMount(async () => {
+    db = initDuckDb();
+  });
 </script>
 
 <div class="container">
+  <input type="file" id="file" bind:value={files} />
+
   <input type="text" class="input" bind:value={queryInput} />
   <br />
-  <button on:click={() => query(queryInput)}>Click me</button>
+  <button
+    on:click={() => {
+      registerFile(files[0]);
+      query(queryInput);
+    }}>Query</button
+  >
   <div class="queryResult">{queryResult}</div>
 </div>
 
@@ -68,7 +96,6 @@
     border: 1px solid #ccc;
     border-radius: 5px;
     width: 50%;
-  
   }
   .container {
     display: flex;
@@ -76,6 +103,5 @@
     align-items: center;
     justify-content: center;
     height: 100vh;
-    
   }
 </style>
