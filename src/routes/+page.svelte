@@ -60,7 +60,6 @@
       DuckDBDataProtocol.BROWSER_FILEREADER,
       true
     );
-
   }
 
   onMount(async () => {
@@ -69,17 +68,20 @@
 </script>
 
 <div class="container">
-  <input type="file" id="file" bind:value={files} />
-
-  <input type="text" class="input" bind:value={queryInput} />
-  <br />
-  <button
-    on:click={() => {
-      registerFile(files[0]);
-      query(queryInput);
-    }}>Query</button
-  >
-  <div class="queryResult">{queryResult}</div>
+  <input type="file" id="file" bind:files />
+  {#if files && files[0]}
+    <input type="text" class="input" bind:value={queryInput} />
+    <br />
+    <button
+      on:click={() => {
+        registerFile(files[0]).then(() => {
+          console.log('file registered');
+          query(queryInput);
+        });
+      }}>Query</button
+    >
+    <div class="queryResult">{queryResult}</div>
+  {/if}
 </div>
 
 <style>
