@@ -7,10 +7,11 @@
   import { DuckDBDataProtocol } from '@duckdb/duckdb-wasm';
   import { onMount } from 'svelte';
   import { GridApi, createGrid } from 'ag-grid-community';
+  import type * as arrow from 'apache-arrow';
   import 'ag-grid-community/styles/ag-grid.css';
   import 'ag-grid-community/styles/ag-theme-quartz.css';
 
-  export let queryResult = '';
+  export let queryResult: arrow.Table<any>;
   export let queryInput = '';
   export let files: FileList;
 
@@ -40,27 +41,20 @@
 
   async function query(queryString: string) {
     const c = await (await db).connect();
-
-    // const res = await fetch(
-    //   'https://shell.duckdb.org/data/tpch/0_01/parquet/lineitem.parquet'
-    // );
-    // await db.registerFileBuffer(
-    //   'buffer.parquet',
-    //   new Uint8Array(await res.arrayBuffer())
-    // );
-
     const result = await c.query(queryString);
     console.log(result);
     queryResult = result;
 
-    const queryData = JSON.parse(queryResult);
+    const columns = queryResult.schema.fields.map((field) => field.name);
+    const queryData = queryResult.toArray();
 
-    let colDefs : any[] = [];
-    const keys = Object.keys(queryData[0]);
-    keys.forEach(key => colDefs.push({
-      field : key,
-      filter: true
-    }));
+    let colDefs: any[] = [];
+    columns.forEach((key) =>
+      colDefs.push({
+        field: key,
+        filter: true,
+      })
+    );
     agGridApi.setGridOption('columnDefs', colDefs);
     agGridApi.setGridOption('rowData', queryData);
   }
@@ -78,7 +72,10 @@
   }
 
   onMount(() => {
-    agGridApi = createGrid(document.getElementById("queryResultGrid") as any, {});
+    agGridApi = createGrid(
+      document.getElementById('queryResultGrid') as any,
+      {}
+    );
     db = initDuckDb();
   });
 </script>
