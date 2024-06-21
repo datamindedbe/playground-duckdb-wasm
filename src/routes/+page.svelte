@@ -5,7 +5,8 @@
   import duckdb_wasm_eh from '@duckdb/duckdb-wasm/dist/duckdb-eh.wasm?url';
   import eh_worker from '@duckdb/duckdb-wasm/dist/duckdb-browser-eh.worker.js?url';
 
-  let queryResult = '';
+  export let queryResult = '';
+  export let queryInput = '';
   async function initDuckDb(): Promise<duckdb.AsyncDuckDB> {
     const MANUAL_BUNDLES: duckdb.DuckDBBundles = {
       mvp: {
@@ -31,7 +32,6 @@
     const db = await initDuckDb();
     const c = await db.connect();
 
-    const query = 'SELECT count(*) FROM buffer.parquet;';
     const res = await fetch(
       'https://shell.duckdb.org/data/tpch/0_01/parquet/lineitem.parquet'
     );
@@ -40,18 +40,19 @@
       new Uint8Array(await res.arrayBuffer())
     );
 
-    const result = await c.query(query);
+    const result = await c.query(queryString);
     console.log(result);
     queryResult = result;
     // return resu;
   }
 </script>
 
-
-<button on:click={() => query('SELECT count(*) FROM buffer.parquet;')}
-  >Click me</button
->
-<div class="queryResult">{queryResult}</div>
+<div class="container">
+  <input type="text" class="input" bind:value={queryInput} />
+  <br />
+  <button on:click={() => query(queryInput)}>Click me</button>
+  <div class="queryResult">{queryResult}</div>
+</div>
 
 <style>
   .queryResult {
@@ -59,5 +60,22 @@
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
+    width: 50%;
+    height: 50%;
+  }
+  .input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 50%;
+  
+  }
+  .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    
   }
 </style>
