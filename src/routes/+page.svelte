@@ -6,12 +6,16 @@
   import eh_worker from '@duckdb/duckdb-wasm/dist/duckdb-browser-eh.worker.js?url';
   import { DuckDBDataProtocol } from '@duckdb/duckdb-wasm';
   import { onMount } from 'svelte';
+  import { GridApi, createGrid } from 'ag-grid-community';
+  import 'ag-grid-community/styles/ag-grid.css';
+  import 'ag-grid-community/styles/ag-theme-quartz.css';
 
   export let queryResult = '';
   export let queryInput = '';
   export let files: FileList;
 
   let db: Promise<duckdb.AsyncDuckDB>;
+  let agGridApi: GridApi;
 
   async function initDuckDb(): Promise<duckdb.AsyncDuckDB> {
     const MANUAL_BUNDLES: duckdb.DuckDBBundles = {
@@ -48,6 +52,14 @@
     const result = await c.query(queryString);
     console.log(result);
     queryResult = result;
+
+    const queryData = JSON.parse(queryResult);
+
+    let colDefs : any[] = [];
+    const keys = Object.keys(queryData[0]);
+    keys.forEach(key => colDefs.push({field : key}));
+    agGridApi.setGridOption('columnDefs', colDefs);
+    agGridApi.setGridOption('rowData', queryData);
   }
 
   async function registerFile(file: File) {
@@ -62,7 +74,8 @@
     );
   }
 
-  onMount(async () => {
+  onMount(() => {
+    agGridApi = createGrid(document.getElementById("queryResultGrid") as any, {});
     db = initDuckDb();
   });
 </script>
@@ -80,8 +93,8 @@
         });
       }}>Query</button
     >
-    <div class="queryResult">{queryResult}</div>
   {/if}
+  <div id="queryResultGrid" class="queryResult ag-theme-quartz"></div>
 </div>
 
 <style>
