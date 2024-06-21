@@ -12,11 +12,12 @@
   import 'ag-grid-community/styles/ag-theme-quartz.css';
 
   export let queryResult: arrow.Table<any>;
-  export let queryInput = '';
+  export let queryInput = 'select * from my_table.parquet;';
   export let files: FileList;
 
   let db: Promise<duckdb.AsyncDuckDB>;
   let agGridApi: GridApi;
+  let columns: string[] = [];
 
   async function initDuckDb(): Promise<duckdb.AsyncDuckDB> {
     const MANUAL_BUNDLES: duckdb.DuckDBBundles = {
@@ -45,19 +46,20 @@
     console.log(result);
     queryResult = result;
 
-    const columns = queryResult.schema.fields.map((field: any) => field.name);
+    columns = queryResult.schema.fields.map((field: any) => field.name);
     const queryData = queryResult.toArray();
 
     let colDefs: any[] = [];
     columns.forEach((key: any) =>
       colDefs.push({
         field: key,
-        filter: true
+        filter: true,
       })
     );
     agGridApi.setGridOption('columnDefs', colDefs);
     agGridApi.setGridOption('rowData', queryData);
-    agGridApi.autoSizeAllColumns();
+    // agGridApi.autoSizeAllColumns();
+    agGridApi = agGridApi;
   }
 
   async function registerFile(file: File) {
@@ -65,7 +67,7 @@
     await (
       await db
     ).registerFileHandle(
-      'buffer.parquet',
+      'my_table.parquet',
       file,
       DuckDBDataProtocol.BROWSER_FILEREADER,
       true
@@ -84,11 +86,16 @@
 <div class="container">
   <figure>
     <img src="inspector_duck.png" alt="DuckDB Logo" height="200px" />
-    <h1> Inspector Duck </h1>
+    <h1>Inspector Duck</h1>
   </figure>
   <input type="file" id="file" bind:files />
   {#if files && files[0]}
-    <input type="text" class="input" bind:value={queryInput} />
+    <textarea
+      class="input"
+      bind:value={queryInput}
+      rows="10"
+      placeholder="select * from my_table.parquet;"
+    />
     <br />
     <button
       on:click={() => {
@@ -99,10 +106,21 @@
       }}>Query</button
     >
   {/if}
-  <div id="queryResultGrid" class="queryResult ag-theme-quartz-auto-dark"></div>
+  <div
+    class={columns.length > 0
+      ? 'queryResult ag-theme-quartz-auto-dark'
+      : 'queryResult ag-theme-quartz-auto-dark hidden'}
+    id="queryResultGrid"
+  ></div>
 </div>
 
 <style>
+  h1 {
+    font-family: Arial;
+  }
+  .hidden {
+    display: none;
+  }
   .queryResult {
     margin-top: 20px;
     padding: 10px;
@@ -110,12 +128,14 @@
     border-radius: 5px;
     width: 50%;
     height: 50%;
+    overflow-x: auto;
   }
   .input {
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
     width: 50%;
+    height: 100px;
   }
   .container {
     display: flex;
