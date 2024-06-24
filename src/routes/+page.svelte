@@ -61,6 +61,10 @@
       agGridApi.setGridOption('rowData', queryData);
       // agGridApi.autoSizeAllColumns();
       agGridApi = agGridApi;
+
+      let nbRows = queryResult.batches.reduce((result, {data}) => result + data.length, 0);
+      let nbCols = queryResult.schema.fields.length;
+      feedbackText = `Query executed successfully. ${nbRows} rows returned in ${nbCols} columns.`;
     }).catch((error) => {
       feedbackText = error;
       console.log(error);
@@ -117,11 +121,6 @@
   <div class="feedback">
     {#if feedbackText}
       <p>{feedbackText}</p>
-    {/if}
-    {#if queryResult}
-      <p>
-        {queryResult.batches.reduce((result, {data}) => result + data.length, 0)} rows returned in {queryResult.schema.fields.length} columns
-      </p>
     {/if}
   </div>
   <div
