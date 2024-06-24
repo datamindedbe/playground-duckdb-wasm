@@ -18,6 +18,7 @@
   let db: Promise<duckdb.AsyncDuckDB>;
   let agGridApi: GridApi;
   let columns: string[] = [];
+  let feedbackText: string = null;
 
   async function initDuckDb(): Promise<duckdb.AsyncDuckDB> {
     const MANUAL_BUNDLES: duckdb.DuckDBBundles = {
@@ -41,25 +42,29 @@
   }
 
   async function query(queryString: string) {
-    const c = await (await db).connect();
-    const result = await c.query(queryString);
-    console.log(result);
-    queryResult = result;
+    const connection = await (await db).connect();
+    const result = await connection.query(queryString).then((result) => {
+      console.log(result);
+      queryResult = result;
 
-    columns = queryResult.schema.fields.map((field: any) => field.name);
-    const queryData = queryResult.toArray();
+      columns = queryResult.schema.fields.map((field: any) => field.name);
+      const queryData = queryResult.toArray();
 
-    let colDefs: any[] = [];
-    columns.forEach((key: any) =>
-      colDefs.push({
-        field: key,
-        filter: true,
-      })
-    );
-    agGridApi.setGridOption('columnDefs', colDefs);
-    agGridApi.setGridOption('rowData', queryData);
-    // agGridApi.autoSizeAllColumns();
-    agGridApi = agGridApi;
+      let colDefs: any[] = [];
+      columns.forEach((key: any) =>
+        colDefs.push({
+          field: key,
+          filter: true,
+        })
+      );
+      agGridApi.setGridOption('columnDefs', colDefs);
+      agGridApi.setGridOption('rowData', queryData);
+      // agGridApi.autoSizeAllColumns();
+      agGridApi = agGridApi;
+    }).catch((error) => {
+      feedbackText = error;
+      console.log(error);
+    });
   }
 
   async function registerFiles(files: FileList) {
@@ -73,7 +78,7 @@
         DuckDBDataProtocol.BROWSER_FILEREADER,
         true
       );
-      queryInput = `select * from ${file.name};`;
+      queryInput = `select * from '${file.name}';`;
     }
   }
 
@@ -106,6 +111,19 @@
       }}>Query</button
     >
   {/if}
+  <div >
+    <br />
+  </div>
+  <div class="feedback">
+    {#if feedbackText}
+      <p>{feedbackText}</p>
+    {/if}
+    {#if queryResult}
+      <p>
+        {queryResult.batches.reduce((result, {data}) => result + data.length, 0)} rows returned in {queryResult.schema.fields.length} columns
+      </p>
+    {/if}
+  </div>
   <div
     class={columns.length > 0
       ? 'queryResult ag-theme-quartz-auto-dark'
