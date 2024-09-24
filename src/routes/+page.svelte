@@ -10,6 +10,9 @@
   import type * as arrow from 'apache-arrow';
   import 'ag-grid-community/styles/ag-grid.css';
   import 'ag-grid-community/styles/ag-theme-quartz.css';
+//  import * as d3 from 'd3';
+	import { scaleLinear } from 'd3';
+  import BarChart from '$lib/BarChart.svelte';
 
   export let queryResult: arrow.Table<any>;
   export let queryInput = '';
@@ -20,6 +23,25 @@
   let columns: string[] = [];
   let feedbackText: string = null;
 
+	let barchart_points = [
+		{ x: 1990, y: 16.6 },
+		{ x: 1995, y: 19.6 },
+		{ x: 2000, y: 14.4 },
+		{ x: 2005, y: 14 },
+		{ x: 2010, y: 13 },
+		{ x: "lol", y: 12.4 },
+    { x: 2020, y: 17 },
+    { x: 2025, y: 10.9 },
+    { x: 2030, y: 8 },
+	];
+  const barchart_width = 1500;
+  const barchart_height = 400;
+	const barchart_xTicks = [1990, 1995, 2000, 2005, 2010, 2015];
+	const barchart_yTicks = [0, 5, 10, 15, 20];
+	const barchart_padding = { top: 20, right: 15, bottom: 20, left: 25 };
+
+
+  // duckdb
   async function initDuckDb(): Promise<duckdb.AsyncDuckDB> {
     const MANUAL_BUNDLES: duckdb.DuckDBBundles = {
       mvp: {
@@ -49,6 +71,12 @@
 
       columns = queryResult.schema.fields.map((field: any) => field.name);
       const queryData = queryResult.toArray();
+
+      // Update the points array from queryResult based on the columns
+      barchart_points = queryData.map(row => ({
+        x: row.x,  // TODO
+        y: row.y  // TODO: make column names for x and y user input
+      }));
 
       let colDefs: any[] = [];
       columns.forEach((key: any) =>
@@ -86,6 +114,20 @@
     }
   }
 
+
+  // D3
+ // $: bins = d3.histogram().domain(x.domain()).thresholds(x.ticks(40))(data);
+
+//  // set the parameters for the histogram
+//  const histogram = d3.histogram()
+//      .value(function(d) { return d.price; })   // I need to give the vector of value
+//      .domain(x.domain())  // then the domain of the graphic
+//      .thresholds(x.ticks(70)); // then the numbers of bins
+//
+//  // And apply this function to data to get the bins
+//  const bins = histogram(data);
+  // End D3
+
   onMount(() => {
     agGridApi = createGrid(
       document.getElementById('queryResultGrid') as any,
@@ -97,7 +139,7 @@
 
 <div class="container">
   <figure>
-    <img src="inspector_duck.png" alt="DuckDB Logo" height="200px" />
+    <img src="inspector_duck.png" alt="Inspector Duck Logo" height="100px" />
     <h1>Inspector Duck</h1>
   </figure>
   <input type="file" id="file" bind:files multiple on:change={() => {registerFiles(files)}} />
@@ -124,12 +166,23 @@
     {/if}
   </div>
   <div
+    id="queryResultGrid"
     class={columns.length > 0
       ? 'queryResult ag-theme-quartz-auto-dark'
       : 'queryResult ag-theme-quartz-auto-dark hidden'}
-    id="queryResultGrid"
-  ></div>
-</div>
+    >
+  </div>
+  <div>
+    <br />
+    <b>Barchart</b>
+    <BarChart
+      points={barchart_points}
+      xTicks={barchart_xTicks}
+      yTicks={barchart_yTicks}
+      padding={barchart_padding}
+      width={barchart_width} height={barchart_height} />
+  </div>
+</div>  <!-- end container -->
 
 <style>
   h1 {
